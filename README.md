@@ -79,24 +79,6 @@ Scripts/
 └── make_release.sh  打包含全部模型的 DMG
 ```
 
-## Apple Silicon 兼容性适配
-
-实测发现，官方 `realesrgan-ncnn-vulkan`（20220424 等 macOS 构建，arm64 与 Rosetta x86_64 均尝试）
-在 Apple M4 / macOS 26 上 GPU 推理阶段必然段错误（退出码 139）；而同家族的
-`realcugan-ncnn-vulkan 20220728`、`rife-ncnn-vulkan 20221029`（更新的 ncnn 运行时）运行正常。
-
-**原因**：旧版 ncnn 运行时与新 macOS 的 MoltenVK 图形栈不兼容。
-
-**适配方案**：Real-ESRGAN 后端改用 [upscayl-ncnn](https://github.com/upscayl/upscayl-ncnn) 维护的
-`upscayl-bin` 构建（基于新 ncnn，实测 M4 正常推理）。其模型文件格式与官方完全一致
-（`models/{模型名}.param/.bin`，`realesr-animevideov3` 为 `-x倍数` 后缀），可直接复用官方模型。
-
-应用内做了**双流派自动适配**：`SuperResolutionService` 会解析工具的 `-h` 输出，
-识别是官方版还是 Upscayl 版，自动选择正确的参数组合（官方：`-n/-s/-m`；Upscayl：`-n/-m/-z/-s`）。
-RIFE 参数同样按官方 20221029 版语义适配（`-n` 为目标帧数、`-m` 为模型路径，4x 通过执行两遍实现）。
-
-Anime4KCPP 官方未提供 macOS 预编译包，本项目在 `install_deps.sh` 中从源码构建
-（cmake + macOS 自带 OpenCL 框架），实测在 M4 上可用。
 
 ## 自动构建与发布
 
