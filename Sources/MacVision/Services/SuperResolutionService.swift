@@ -53,11 +53,6 @@ struct SuperResolutionService {
     }
 
     /// 组装各后端的基础参数（不含 -i/-o）
-    /// Mac 适配：Real-ESRGAN 后端存在两个流派——
-    ///   1) 官方 realesrgan-ncnn-vulkan：-n 模型名、-s 倍数、-m 模型目录
-    ///   2) Upscayl upscayl-bin（新版 ncnn，修复 Apple Silicon 上的段错误崩溃）：
-    ///      -n 模型名、-m 模型目录、-z 模型倍数、-s 输出倍数
-    /// 通过解析 -h 输出自动识别（upscayl 支持 -z），选择正确的参数组合。
     private func baseArguments(for settings: JobSettings, executable: URL) async -> [String] {
         var arguments: [String] = []
         switch settings.backend {
