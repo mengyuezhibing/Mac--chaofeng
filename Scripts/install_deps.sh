@@ -1,17 +1,31 @@
 #!/bin/zsh
-# SnowLeopard Vision for Mac — 依赖安装脚本
+# Mac图片与视频超分 — 依赖安装脚本
 # 功能：
 #   1. 检测/安装 Homebrew 与 FFmpeg（可选）
 #   2. 自动从 GitHub Releases 下载 macOS 版 ncnn 超分/补帧工具
-#      并安装到 ~/Library/Application Support/SnowLeopardVision/bin
+#      并安装到 ~/Library/Application Support/MacVision/bin
 set -e
 
-BIN_DIR="$HOME/Library/Application Support/SnowLeopardVision/bin"
+BIN_DIR="$HOME/Library/Application Support/MacVision/bin"
 ARCH=$(uname -m)
 case "$ARCH" in
   arm64) ARCH_TAG="arm64" ;;
   *)     ARCH_TAG="x86_64" ;;
 esac
+
+# GitHub 访问：优先直连（CI runner 可达），不通时自动走 gh-proxy 镜像
+GH_WEB="https://github.com"
+GH_API="https://api.github.com"
+if ! curl -fsI --max-time 10 "$GH_API" >/dev/null 2>&1; then
+  echo "==> 直连 GitHub 不通，改用 gh-proxy 镜像"
+  GH_WEB="https://gh-proxy.com/https://github.com"
+  GH_API="https://gh-proxy.com/https://api.github.com"
+fi
+# 直连拿到的下载链接，在走代理时替换为代理地址
+gh_url() {
+  if [ "$GH_WEB" = "https://github.com" ]; then echo "$1"
+  else echo "$1" | sed "s|https://github.com|$GH_WEB|"; fi
+}
 
 echo "==> 目标目录: $BIN_DIR (架构: $ARCH_TAG)"
 mkdir -p "$BIN_DIR"
@@ -36,7 +50,7 @@ fetch_latest_asset() {
   # $1=repo  $2=匹配模式(egrep 正则)
   local repo="$1" pattern="$2"
   local json
-  json=$(curl -fsSL "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null) || return 1
+  json=$(curl -fsSL "$GH_API/repos/$repo/releases/latest" 2>/dev/null) || return 1
   echo "$json" | tr ',' '\n' \
     | grep '"browser_download_url"' \
     | sed 's/.*"browser_download_url"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/' \
@@ -51,7 +65,7 @@ download_and_install() {
   fi
   echo "==> 查找 $name ($repo)"
   local url
-  url=$(fetch_latest_asset "$repo" "$pattern")
+  url=$(gh_url "$(fetch_latest_asset "$repo" "$pattern")")
   if [ -z "$url" ]; then
     echo "!! 未找到匹配 macOS($ARCH_TAG) 的资源，请手动下载："
     echo "   https://github.com/$repo/releases"
@@ -102,10 +116,10 @@ install_realesrgan_upscayl() {
   fi
   echo "==> 查找 upscayl-bin ($BIN_DIR 目标: $name)"
   local json url tmp bin
-  json=$(curl -fsSL "https://gh-proxy.com/https://api.github.com/repos/upscayl/upscayl-ncnn/releases/latest" 2>/dev/null) || return 1
-  url=$(echo "$json" | tr ',' '\n' | grep '"browser_download_url"' \
+  json=$(curl -fsSL "$GH_API/repos/upscayl/upscayl-ncnn/releases/latest" 2>/dev/null) || return 1
+  url=$(gh_url "$(echo "$json" | tr ',' '\n' | grep '"browser_download_url"' \
         | sed 's/.*"browser_download_url"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/' \
-        | grep -i 'macos' | head -n 1)
+        | grep -i 'macos' | head -n 1)")
   [ -z "$url" ] && { echo "!! 未找到 upscayl-bin macOS 资源"; return 1; }
   echo "==> 下载 $url"
   tmp=$(mktemp -d)
@@ -138,7 +152,7 @@ install_anime4kcpp_from_source() {
   fi
   local tmp=$(mktemp -d)
   echo "==> 克隆 TianZerL/Anime4KCPP"
-  git clone --depth 1 https://gh-proxy.com/https://github.com/TianZerL/Anime4KCPP.git "$tmp/src" 2>/dev/null
+  git clone --depth 1 "$GH_WEB/TianZerL/Anime4KCPP.git" "$tmp/src" 2>/dev/null
   cmake -S "$tmp/src" -B "$tmp/build" -DAC_BUILD_CLI=ON -DAC_BUILD_GUI=OFF -DAC_BUILD_VIDEO=OFF -DAC_CORE_WITH_OPENCL=ON -DAC_BUILD_TESTS=OFF -DCMAKE_OSX_ARCHITECTURES="$(uname -m)" >/dev/null
   cmake --build "$tmp/build" -j "$(sysctl -n hw.ncpu)" >/dev/null 2>&1
   if [ ! -x "$tmp/build/bin/ac_cli" ]; then
@@ -159,4 +173,4 @@ echo "================ 完成 ================"
 echo "已安装到 $BIN_DIR："
 ls -la "$BIN_DIR" || true
 echo ""
-echo "重新打开 SnowLeopard Vision，即可在「环境检测」页确认工具状态。"
+echo "重新打开 Mac图片与视频超分，即可在「环境检测」页确认工具状态。"

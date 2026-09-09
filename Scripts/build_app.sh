@@ -1,5 +1,5 @@
 #!/bin/zsh
-# 将 SwiftPM 构建结果打包为 SnowLeopardVision.app
+# 将 SwiftPM 构建结果打包为 MacVision.app
 set -e
 cd "$(dirname "$0")/.."
 
@@ -7,16 +7,23 @@ CONFIG="${1:-release}"
 echo "==> swift build -c $CONFIG"
 swift build -c "$CONFIG"
 
-APP="build/SnowLeopardVision.app"
+APP="build/MacVision.app"
 CONTENTS="$APP/Contents"
 rm -rf "$APP"
 mkdir -p "$CONTENTS/MacOS" "$CONTENTS/Resources"
 
-cp ".build/$CONFIG/SnowLeopardVision" "$CONTENTS/MacOS/SnowLeopardVision"
+cp ".build/$CONFIG/MacVision" "$CONTENTS/MacOS/MacVision"
 
 # 应用图标
 if [ -f "Assets/AppIcon.icns" ]; then
   cp "Assets/AppIcon.icns" "$CONTENTS/Resources/AppIcon.icns"
+fi
+
+# 本地化资源（菜单栏随系统语言显示中文）
+if [ -d "Resources" ]; then
+  for lproj in Resources/*.lproj; do
+    [ -d "$lproj" ] && cp -R "$lproj" "$CONTENTS/Resources/"
+  done
 fi
 
 cat > "$CONTENTS/Info.plist" <<'PLIST'
@@ -29,9 +36,9 @@ cat > "$CONTENTS/Info.plist" <<'PLIST'
     <key>CFBundleDisplayName</key>
     <string>Mac图片与视频超分</string>
     <key>CFBundleIdentifier</key>
-    <string>io.github.snowleopard-elysia.vision.mac</string>
+    <string>com.macvision.upscaler</string>
     <key>CFBundleExecutable</key>
-    <string>SnowLeopardVision</string>
+    <string>MacVision</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>CFBundlePackageType</key>
@@ -46,6 +53,14 @@ cat > "$CONTENTS/Info.plist" <<'PLIST'
     <true/>
     <key>NSHumanReadableCopyright</key>
     <string>基于开源组件：FFmpeg / Real-ESRGAN / Real-CUGAN / Anime4K / RIFE (ncnn-vulkan)</string>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>zh_CN</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>zh_CN</string>
+        <string>zh-Hans</string>
+        <string>en</string>
+    </array>
 </dict>
 </plist>
 PLIST

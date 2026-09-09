@@ -97,7 +97,7 @@ struct RunPanelView: View {
 
     private func exportDiagnostics() {
         let panel = NSSavePanel()
-        panel.nameFieldStringValue = "SnowLeopardVision-Diagnostic.txt"
+        panel.nameFieldStringValue = "MacVision-Diagnostic.txt"
         panel.allowedContentTypes = [.plainText]
         guard panel.runModal() == .OK, let url = panel.url else { return }
         let report = DiagnosticsService.buildReport(appModel: appModel, machine: nil)

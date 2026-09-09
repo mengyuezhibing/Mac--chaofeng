@@ -10,7 +10,7 @@ APP_NAME="Mac图片与视频超分"
 RELEASE_DIR="release"
 STAGE="$RELEASE_DIR/staging"
 DMG="$RELEASE_DIR/${APP_NAME}-${VERSION}-${ARCH}.dmg"
-BIN_LOCAL="$HOME/Library/Application Support/SnowLeopardVision/bin"
+BIN_LOCAL="$HOME/Library/Application Support/MacVision/bin"
 
 echo "==> 构建 release 版本"
 swift build -c release
@@ -21,7 +21,7 @@ echo "==> 打包 .app"
 rm -rf "$RELEASE_DIR"
 mkdir -p "$STAGE"
 
-cp -R "build/SnowLeopardVision.app" "$STAGE/$APP_NAME.app"
+cp -R "build/MacVision.app" "$STAGE/$APP_NAME.app"
 
 # 复制全部依赖工具与模型（确保 release 自包含、零依赖运行）
 if [ -d "$BIN_LOCAL" ]; then
@@ -53,10 +53,10 @@ Mac图片与视频超分 v1.0.0
 2. 首次启动若提示「无法打开，因为无法验证开发者」，请到
    「系统设置 → 隐私与安全性」点击「仍要打开」
 
-依赖工具已放在 ~/Library/Application Support/SnowLeopardVision/bin，
+依赖工具已放在 ~/Library/Application Support/MacVision/bin，
 应用启动后会自动检测；如需手动指定路径，可在偏好设置（⌘,）中配置。
 
-详细使用说明见：https://github.com/SnowLeopard-Elysia/SnowLeopard-Vision
+详细使用说明见本仓库 README。
 TXT
 
 # 创建 Applications 软链接（DMG 美观）

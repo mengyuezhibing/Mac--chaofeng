@@ -1,0 +1,5 @@
+/* Info.plist 本地化（简体中文） */
+CFBundleName = "Mac图片与视频超分";
+CFBundleDisplayName = "Mac图片与视频超分";
+CFBundleGetInfoString = "Mac 本地 AI 图片与视频增强工具";
+NSHumanReadableCopyright = "基于开源组件：FFmpeg / Real-ESRGAN / Real-CUGAN / Anime4K / RIFE";

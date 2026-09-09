@@ -18,7 +18,7 @@ struct PipelineService {
         let interp = InterpolationService(tools: tools, log: log)
 
         try FileTools.makeDirectoryIfMissing(settings.outputDirectory)
-        let tempRoot = try FileTools.makeUniqueDirectory(root: settings.tempRoot, prefix: "slv")
+        let tempRoot = try FileTools.makeUniqueDirectory(root: settings.tempRoot, prefix: "macvision")
         defer {
             if !settings.keepIntermediateFiles { FileTools.removeItemIfPossible(tempRoot) }
         }

@@ -121,7 +121,7 @@ final class ToolLocator: ObservableObject {
     static var applicationSupportBin: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? FileManager.default.homeDirectoryForCurrentUser
-        return base.appendingPathComponent("SnowLeopardVision/bin", isDirectory: true)
+        return base.appendingPathComponent("MacVision/bin", isDirectory: true)
     }
 
     func candidatePaths(for kind: ToolKind) -> [String] {

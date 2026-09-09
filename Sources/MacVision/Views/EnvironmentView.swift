@@ -57,7 +57,7 @@ struct EnvironmentView: View {
                     }
                     .padding(.top, 4)
 
-                    Text("安装方式：\n1. FFmpeg：运行 brew install ffmpeg（需先安装 Homebrew）\n2. ncnn 超分/补帧工具：运行仓库内的 Scripts/install_deps.sh，脚本会自动下载 macOS 版并放入 ~/Library/Application Support/SnowLeopardVision/bin\n3. 也可以手动下载工具后，在偏好设置中指定路径")
+                    Text("安装方式：\n1. FFmpeg：运行 brew install ffmpeg（需先安装 Homebrew）\n2. ncnn 超分/补帧工具：运行仓库内的 Scripts/install_deps.sh，脚本会自动下载 macOS 版并放入 ~/Library/Application Support/MacVision/bin\n3. 也可以手动下载工具后，在偏好设置中指定路径")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)

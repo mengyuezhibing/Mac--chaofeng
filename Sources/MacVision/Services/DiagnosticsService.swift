@@ -7,7 +7,7 @@ enum DiagnosticsService {
     @MainActor
     static func buildReport(appModel: AppModel, machine: MachineInfo?) -> String {
         var lines: [String] = []
-        lines.append("SnowLeopard Vision for Mac — 诊断信息")
+        lines.append("Mac图片与视频超分 — 诊断信息")
         lines.append("生成时间：\(Date().formatted())")
         lines.append("")
         lines.append("== 设备 ==")

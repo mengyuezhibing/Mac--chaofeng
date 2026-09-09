@@ -76,7 +76,7 @@ final class AppModel: ObservableObject {
         self.imageOutputFormat = ImageOutputFormat(rawValue: defaults.string(forKey: "imgFormat") ?? "") ?? .png
         let savedDir = defaults.string(forKey: "outDir")
         self.outputDirectory = savedDir.map { URL(fileURLWithPath: $0, isDirectory: true) }
-            ?? home.appendingPathComponent("Desktop/SnowLeopardVision Output", isDirectory: true)
+            ?? home.appendingPathComponent("Desktop/MacVision Output", isDirectory: true)
         self.outputName = defaults.string(forKey: "outName") ?? ""
         self.accentColorName = defaults.string(forKey: "accent") ?? "leopard"
         self.appearanceRaw = defaults.string(forKey: "appearance") ?? "system"
@@ -116,7 +116,7 @@ final class AppModel: ObservableObject {
     static var defaultTempRoot: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? FileManager.default.homeDirectoryForCurrentUser
-        return base.appendingPathComponent("SnowLeopardVision/Temp", isDirectory: true)
+        return base.appendingPathComponent("MacVision/Temp", isDirectory: true)
     }
 
     // MARK: 环境检测
