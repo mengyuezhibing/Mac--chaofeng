@@ -39,10 +39,14 @@ jobs:
       - name: 上传 Release 资源
         uses: softprops/action-gh-release@v2
         with:
+          # workflow_dispatch 触发时没有 tag，需显式指定，否则 action 报 "requires a tag"
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', github.event.inputs.version) }}
+          name: Mac图片与视频超分 ${{ env.VERSION }}
           files: |
             release/*.dmg
             release/*.zip
           generate_release_notes: true
           fail_on_unmatched_files: false
+          overwrite_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

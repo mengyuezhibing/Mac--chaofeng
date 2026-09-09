@@ -6,10 +6,11 @@ cd "$(dirname "$0")/.."
 
 VERSION="${VERSION:-1.0.0}"
 ARCH=$(uname -m)
-APP_NAME="Mac图片与视频超分"
+APP_NAME="Mac图片与视频超分"      # 卷标与 DMG 内显示名
+FILE_BASE="MacVision"              # 文件名用 ASCII，避免中文名在下载/编码环节出问题
 RELEASE_DIR="release"
 STAGE="$RELEASE_DIR/staging"
-DMG="$RELEASE_DIR/${APP_NAME}-${VERSION}-${ARCH}.dmg"
+DMG="$RELEASE_DIR/${FILE_BASE}-${VERSION}-${ARCH}.dmg"
 BIN_LOCAL="$HOME/Library/Application Support/MacVision/bin"
 
 echo "==> 构建 release 版本"
@@ -24,24 +25,26 @@ mkdir -p "$STAGE"
 cp -R "build/MacVision.app" "$STAGE/$APP_NAME.app"
 
 # 复制全部依赖工具与模型（确保 release 自包含、零依赖运行）
+# 直接复制整个目录，避免白名单遗漏新增的模型目录
 if [ -d "$BIN_LOCAL" ]; then
-  echo "==> 复制依赖目录（含全部模型）"
-  mkdir -p "$STAGE/Tools"
-  for item in "$BIN_LOCAL"/*; do
-    name=$(basename "$item")
-    # 跳过不是工具/模型的旧文件
-    case "$name" in
-      ffmpeg|ffprobe|realesrgan-ncnn-vulkan|realcugan-ncnn-vulkan|rife-ncnn-vulkan|Anime4KCPP_CLI|models|models-se|models-pro|models-nose|rife|rife-HD|rife-UHD|rife-anime|rife-v2|rife-v2.3|rife-v2.4|rife-v3.0|rife-v3.1|rife-v4|rife-v4.6)
-        if [ -d "$item" ]; then
-          cp -R "$item" "$STAGE/Tools/"
-        else
-          cp "$item" "$STAGE/Tools/"
-          chmod +x "$STAGE/Tools/$name" 2>/dev/null
-        fi
-        ;;
-    esac
-  done
+  echo "==> 复制依赖目录（工具 + 全部模型）"
+  cp -R "$BIN_LOCAL" "$STAGE/Tools"
+  find "$STAGE/Tools" -type f -perm +111 -exec chmod +x {} \; 2>/dev/null
   xattr -dr com.apple.quarantine "$STAGE/Tools" 2>/dev/null || true
+
+  # 体积与内容校验：模型缺失会导致用户装完无法推理
+  SIZE=$(du -sm "$STAGE/Tools" | cut -f1)
+  echo "    Tools 体积: ${SIZE} MB"
+  if [ "$SIZE" -lt 400 ]; then
+    echo "!! 警告：工具+模型仅 ${SIZE} MB，模型可能未完整下载"
+    echo "   目录内容：$(ls "$BIN_LOCAL" | tr '\n' ' ')"
+  fi
+  for must in ffmpeg ffprobe realesrgan-ncnn-vulkan realcugan-ncnn-vulkan rife-ncnn-vulkan; do
+    [ -e "$STAGE/Tools/$must" ] || echo "!! 缺少 $must"
+  done
+  for m in models models-se rife-v4.6; do
+    [ -d "$STAGE/Tools/$m" ] || echo "!! 缺少模型目录 $m"
+  done
 fi
 
 # 创建可读文档
@@ -64,7 +67,7 @@ ln -s /Applications "$STAGE/Applications"
 
 # 创建 DMG。CI 上 hdiutil 偶发 "Resource busy"，重试若干次；
 # 仍失败则回退为 zip，保证 Release 一定有可用产物。
-ZIP="$RELEASE_DIR/${APP_NAME}-${VERSION}-${ARCH}.zip"
+ZIP="$RELEASE_DIR/${FILE_BASE}-${VERSION}-${ARCH}.zip"
 echo "==> 创建 DMG"
 ok=0
 for attempt in 1 2 3; do

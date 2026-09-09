@@ -30,20 +30,37 @@ gh_url() {
 echo "==> 目标目录: $BIN_DIR (架构: $ARCH_TAG)"
 mkdir -p "$BIN_DIR"
 
-# ---------- 1. Homebrew / FFmpeg ----------
-if command -v ffmpeg >/dev/null 2>&1; then
-  echo "==> 已检测到 ffmpeg，跳过"
-else
-  echo "==> 未检测到 ffmpeg"
+# ---------- 1. FFmpeg / FFprobe ----------
+install_ffmpeg() {
+  if command -v ffmpeg >/dev/null 2>&1 && command -v ffprobe >/dev/null 2>&1; then
+    echo "==> 已检测到 ffmpeg / ffprobe，跳过"
+    return 0
+  fi
+  # 优先 Homebrew
   if command -v brew >/dev/null 2>&1; then
     echo "==> 使用 Homebrew 安装 ffmpeg"
-    brew install ffmpeg
-  else
-    echo "!! 未安装 Homebrew。可执行以下命令安装后重试："
-    echo "   /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
-    echo "   brew install ffmpeg"
+    brew install ffmpeg 2>/dev/null || true
   fi
-fi
+  if ! command -v ffmpeg >/dev/null 2>&1; then
+    echo "==> 下载 ffmpeg 静态构建（arm64）"
+    curl -fL --retry 3 --max-time 600 \
+      "$(gh_url "https://github.com/eugeneware/ffmpeg-static/releases/latest/download/ffmpeg-darwin-arm64.gz")" \
+      -o /tmp/ffmpeg.gz && gunzip -f /tmp/ffmpeg.gz && mv /tmp/ffmpeg "$BIN_DIR/ffmpeg" \
+      && chmod +x "$BIN_DIR/ffmpeg" || echo "!! ffmpeg 下载失败"
+  fi
+  if ! command -v ffprobe >/dev/null 2>&1 && [ ! -x "$BIN_DIR/ffprobe" ]; then
+    echo "==> ffprobe 未就绪，尝试 Homebrew"
+    command -v brew >/dev/null 2>&1 && brew install ffmpeg 2>/dev/null || true
+    if command -v ffprobe >/dev/null 2>&1; then
+      cp "$(command -v ffprobe)" "$BIN_DIR/ffprobe" && chmod +x "$BIN_DIR/ffprobe"
+    fi
+  fi
+  if [ ! -x "$BIN_DIR/ffmpeg" ] && command -v ffmpeg >/dev/null 2>&1; then
+    cp "$(command -v ffmpeg)" "$BIN_DIR/ffmpeg" && chmod +x "$BIN_DIR/ffmpeg"
+  fi
+  echo "==> ffmpeg: $([ -x "$BIN_DIR/ffmpeg" ] && echo 就绪 || echo 缺失) / ffprobe: $([ -x "$BIN_DIR/ffprobe" ] && echo 就绪 || echo 缺失)"
+}
+install_ffmpeg
 
 # ---------- 2. 从 GitHub Releases 下载 ncnn 工具 ----------
 fetch_latest_asset() {
@@ -91,10 +108,18 @@ download_and_install() {
   fi
   cp "$bin" "$BIN_DIR/$name"
   chmod +x "$BIN_DIR/$name"
-  # 复制模型目录
-  find "$(dirname "$bin")" -maxdepth 1 -type d \( -iname 'models*' -o -iname '*.param' \) | while read -r d; do
-    dst="$BIN_DIR/$(basename "$d")"
-    [ -d "$dst" ] || cp -R "$d" "$dst"
+  # 复制模型目录：压缩包中除可执行文件外的所有子目录都视为模型
+  # （rife 的模型目录名为 rife / rife-v4.6 等，不能用 models* 过滤，否则会漏掉）
+  local model_root
+  model_root=$(dirname "$bin")
+  find "$model_root" -maxdepth 1 -mindepth 1 -type d | while read -r d; do
+    local nm; nm=$(basename "$d")
+    [ -d "$BIN_DIR/$nm" ] || { cp -R "$d" "$BIN_DIR/" && echo "    模型目录: $nm"; }
+  done
+  # 部分发布包把模型放在上层目录，一并检查
+  find "$(dirname "$model_root")" -maxdepth 1 -mindepth 1 -type d \( -iname 'models*' -o -iname 'rife*' \) 2>/dev/null | while read -r d; do
+    local nm; nm=$(basename "$d")
+    [ -d "$BIN_DIR/$nm" ] || { cp -R "$d" "$BIN_DIR/" && echo "    模型目录: $nm"; }
   done
   # 去除隔离属性，避免 Gatekeeper 拦截
   xattr -dr com.apple.quarantine "$BIN_DIR/$name" 2>/dev/null || true
@@ -131,9 +156,28 @@ install_realesrgan_upscayl() {
   xattr -dr com.apple.quarantine "$BIN_DIR/$name" 2>/dev/null || true
   rm -rf "$tmp"
   echo "==> 已安装 $name（upscayl-ncnn 构建）"
-  echo "   注意：还需 models/ 模型目录，可从官方"
-  echo "   https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesrgan-ncnn-vulkan-20220424-macos.zip"
-  echo "   解压获取（只需其中的 models 目录）"
+
+  # 自动下载 Real-ESRGAN 官方模型目录（upscayl-bin 与官方模型格式完全一致，可直接复用）
+  if [ ! -d "$BIN_DIR/models" ]; then
+    echo "==> 下载 Real-ESRGAN 官方模型目录"
+    local mtmp murl mdir
+    mtmp=$(mktemp -d)
+    murl="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesrgan-ncnn-vulkan-20220424-macos.zip"
+    if curl -fL --retry 3 --max-time 900 "$(gh_url "$murl")" -o "$mtmp/m.zip"; then
+      ditto -x -k "$mtmp/m.zip" "$mtmp/x"
+      mdir=$(find "$mtmp/x" -maxdepth 3 -type d -name models | head -n 1)
+      if [ -n "$mdir" ]; then
+        cp -R "$mdir" "$BIN_DIR/models" && echo "    已安装 models 目录"
+      else
+        echo "!! 压缩包中未找到 models 目录"
+      fi
+    else
+      echo "!! 模型目录下载失败"
+    fi
+    rm -rf "$mtmp"
+  else
+    echo "==> models 目录已存在，跳过"
+  fi
 }
 install_realesrgan_upscayl
 download_and_install "realcugan-ncnn-vulkan"   "nihui/realcugan-ncnn-vulkan" "realcugan-ncnn-vulkan.*mac(os)?"
