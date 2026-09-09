@@ -62,9 +62,29 @@ TXT
 # 创建 Applications 软链接（DMG 美观）
 ln -s /Applications "$STAGE/Applications"
 
+# 创建 DMG。CI 上 hdiutil 偶发 "Resource busy"，重试若干次；
+# 仍失败则回退为 zip，保证 Release 一定有可用产物。
+ZIP="$RELEASE_DIR/${APP_NAME}-${VERSION}-${ARCH}.zip"
 echo "==> 创建 DMG"
-hdiutil create -volname "$APP_NAME" -srcfolder "$STAGE" -ov -format UDZO "$DMG" >/dev/null
+ok=0
+for attempt in 1 2 3; do
+  if hdiutil create -volname "$APP_NAME" -srcfolder "$STAGE" -ov -format UDZO "$DMG" >/dev/null 2>&1; then
+    ok=1
+    break
+  fi
+  echo "    第 $attempt 次失败，重试…"
+  sleep 8
+done
+
+if [ "$ok" = "1" ]; then
+  echo "==> 完成: $DMG"
+  echo "    体积: $(du -h "$DMG" | cut -f1)"
+else
+  echo "!! DMG 创建失败，回退为 zip 打包"
+  rm -f "$DMG"
+  (cd "$STAGE" && zip -qry "../$(basename "$ZIP")" .)
+  echo "==> 完成: $ZIP"
+  echo "    体积: $(du -h "$ZIP" | cut -f1)"
+fi
 
 rm -rf "$STAGE"
-echo "==> 完成: $DMG"
-echo "    体积: $(du -h "$DMG" | cut -f1)"
