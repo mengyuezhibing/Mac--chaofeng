@@ -58,8 +58,6 @@ struct InterpolationService {
     }
 
     /// 组装 RIFE 参数（不含 -i/-o）
-    /// 注意：官方 rife-ncnn-vulkan 中 `-n` 是目标帧数（默认 N*2，即 2 倍），
-    /// 模型通过 `-m` 指定；若使用 TNTwise 分支（-n 为模型名），可在高级参数中覆盖。
     private func baseArguments(for settings: JobSettings, executable: URL) -> [String] {
         var arguments: [String] = []
         if !settings.interpModel.isEmpty {
