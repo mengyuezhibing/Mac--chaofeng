@@ -1,0 +1,16 @@
+MIT License
+
+Copyright (c) 2026 Mac图片与视频超分 Contributors
+
+本应用为开源、免费的本地 AI 图片/视频增强工具，基于以下开源组件构建：
+
+- **FFmpeg**：GNU LGPL 2.1+（含 GPL 组件的构建受 GPL 约束）
+- **Real-ESRGAN / realesrgan-ncnn-vulkan**：BSD 3-Clause
+- **Real-CUGAN / realcugan-ncnn-vulkan**：BSD 3-Clause
+- **Anime4KCPP / Anime4KCPP_CLI**：MIT
+- **RIFE / rife-ncnn-vulkan**：MIT（使用 ncnn 与源自 RIFE 项目的模型）
+
+本应用本体代码以 MIT 协议发布；最终用户需确保输入素材拥有合法的处理、修改、导出和发布权限。
+本应用只提供本地处理流程，不提供素材、不破解版权保护、不内置影视资源。
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.

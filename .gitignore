@@ -1,0 +1,17 @@
+# Swift / SwiftPM
+.build/
+.swiftpm/
+*.xcodeproj/
+Package.resolved
+
+# 构建产物
+build/
+release/
+
+# 系统
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# 用户数据与缓存
+*.log
