@@ -30,10 +30,8 @@ struct MacVisionApp: App {
                     ])
                 }
             }
-            CommandGroup(replacing: .appSettings) {
-                Button("设置…") { Self.openSettings() }
-                    .keyboardShortcut(",", modifiers: .command)
-            }
+            // 注意：不要再用 .appSettings 手动添加「设置…」，
+            // SwiftUI 的 Settings scene 已自动生成并本地化为「设置…」，重复添加会出现两项
             CommandGroup(replacing: .appTermination) {
                 Button("退出 Mac图片与视频超分") { NSApplication.shared.terminate(nil) }
                     .keyboardShortcut("q", modifiers: .command)
@@ -64,12 +62,4 @@ struct MacVisionApp: App {
         }
     }
 
-    /// macOS 13+ 用 showSettingsWindow:，更早版本回退 showPreferencesWindow:
-    private static func openSettings() {
-        if NSApplication.shared.responds(to: Selector(("showSettingsWindow:"))) {
-            NSApplication.shared.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-        } else {
-            NSApplication.shared.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
-        }
-    }
 }
