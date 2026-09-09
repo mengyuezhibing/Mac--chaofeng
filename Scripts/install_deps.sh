@@ -1,9 +1,4 @@
 #!/bin/zsh
-# Mac图片与视频超分 — 依赖安装脚本
-# 功能：
-#   1. 检测/安装 Homebrew 与 FFmpeg（可选）
-#   2. 自动从 GitHub Releases 下载 macOS 版 ncnn 超分/补帧工具
-#      并安装到 ~/Library/Application Support/MacVision/bin
 set -e
 
 BIN_DIR="$HOME/Library/Application Support/MacVision/bin"
@@ -13,7 +8,6 @@ case "$ARCH" in
   *)     ARCH_TAG="x86_64" ;;
 esac
 
-# GitHub 访问：优先直连（CI runner 可达），不通时自动走 gh-proxy 镜像
 GH_WEB="https://github.com"
 GH_API="https://api.github.com"
 if ! curl -fsI --max-time 10 "$GH_API" >/dev/null 2>&1; then
@@ -21,7 +15,6 @@ if ! curl -fsI --max-time 10 "$GH_API" >/dev/null 2>&1; then
   GH_WEB="https://gh-proxy.com/https://github.com"
   GH_API="https://gh-proxy.com/https://api.github.com"
 fi
-# 直连拿到的下载链接，在走代理时替换为代理地址
 gh_url() {
   if [ "$GH_WEB" = "https://github.com" ]; then echo "$1"
   else echo "$1" | sed "s|https://github.com|$GH_WEB|"; fi
