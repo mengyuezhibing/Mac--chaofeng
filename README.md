@@ -1,4 +1,4 @@
-# SnowLeopard Vision for Mac
+# Mac图片与视频超分
 
 [原版 SnowLeopard Vision](https://github.com/SnowLeopard-Elysia/SnowLeopard-Vision)（Windows）的 **macOS 原生重制版**。
 原仓库只发布闭源应用，不含源码；本项目按照其公开功能与技术栈，从零实现了一套 Mac 版：
@@ -99,6 +99,35 @@ Scripts/
 识别是官方版还是 Upscayl 版，自动选择正确的参数组合（官方：`-n/-s/-m`；Upscayl：`-n/-m/-z/-s`）。
 同样地，RIFE 参数也按官方 20221029 版语义适配（`-n` 为目标帧数、`-m` 为模型路径，
 补帧倍数 4x 通过执行两遍实现）。
+
+## 发布到 GitHub
+
+仓库已包含 **GitHub Actions** 工作流，发布流程已自动化：
+
+1. **首次推送**（建立仓库并上传代码）：
+   ```sh
+   # 在 GitHub 网站创建新仓库（例如：Mac-Vision），然后：
+   git remote add origin git@github.com:你的用户名/Mac-Vision.git
+   git push -u origin main
+   ```
+
+2. **触发自动 Release**（推送版本 tag）：
+   ```sh
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+   CI 会在 macOS 14 runner 上：
+   - 安装全部依赖工具与模型（~700MB）
+   - 编译 .app
+   - 打包 DMG（含应用 + 全部 6 个工具 + 全部模型）
+   - 上传到 GitHub Release 页面作为可下载资产
+
+   用户下载 DMG 后拖入 `/Applications` 即可使用，**无需额外安装任何依赖**。
+
+3. **本地手动打包**（不依赖 CI）：
+   ```sh
+   ./Scripts/make_release.sh    # 输出 release/Mac图片与视频超分-1.0.0-arm64.dmg
+   ```
 
 ## 第三方组件声明
 
